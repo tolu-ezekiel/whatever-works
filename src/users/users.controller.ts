@@ -13,7 +13,7 @@ import { UsersService } from './users.service';
 import { User as UserModel } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
 import { AuthenticatedRequest } from './interfaces/user.interface';
-import { GetUserDto, UpdateUserDto } from './dto';
+import { GetUserQueryDto, UpdateUserDto } from './dto';
 
 @Controller('users')
 export class UsersController {
@@ -22,19 +22,16 @@ export class UsersController {
   @UseGuards(AuthGuard)
   @Get()
   async findUser(
-    @Query('username') getUserDto: GetUserDto,
+    @Query('username') getUserQueryDto: GetUserQueryDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<UserModel | null> {
-    return this.usersService.findUser({
-      username: getUserDto.username,
-      user: req.user,
-    });
+    return this.usersService.findUser(getUserQueryDto, req.user);
   }
 
   @UseGuards(AuthGuard)
   @Get('/:id')
   async findById(@Param('id', ParseIntPipe) id: number): Promise<UserModel> {
-    return this.usersService.findById({ id });
+    return this.usersService.findById(id);
   }
 
   @UseGuards(AuthGuard)
@@ -44,9 +41,6 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserModel> {
     // -- TODO -- fix type
-    return this.usersService.updateUser({
-      id,
-      username: updateUserDto.username,
-    });
+    return this.usersService.updateUser(id, updateUserDto);
   }
 }

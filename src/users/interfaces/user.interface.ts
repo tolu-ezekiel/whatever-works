@@ -1,14 +1,15 @@
 import { Request } from 'express';
 
-interface User {
-  id: number;
+export interface JwtUser {
+  sub: number;
   username: string;
-  password: string;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at?: Date;
 }
 
 export interface AuthenticatedRequest extends Request {
-  user: User;
+  user: JwtUser;
+}
+
+export interface CreateUser {
+  username: string;
+  password: string;
 }

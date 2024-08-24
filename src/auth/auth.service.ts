@@ -4,9 +4,8 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UsersService } from '../users/users.service';
-import { PrismaService } from '../prisma/prisma.service';
-// import { LoginUserDto } from '../users/dto/login-user.dto';
+import { AuthRepository } from './auth.repository';
+import { UsersRepository } from '../users/users.repository';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
 import { addMonths } from 'date-fns';
@@ -14,18 +13,12 @@ import { addMonths } from 'date-fns';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
     private jwtService: JwtService,
-    private prisma: PrismaService,
+    private authRepository: AuthRepository,
+    private usersRepository: UsersRepository,
   ) {}
 
-  async generateRefreshToken({
-    byteLength = 100,
-    userId,
-  }: {
-    byteLength?: number;
-    userId: number;
-  }) {
+  async generateRefreshToken(userId: number, byteLength = 100) {
     try {
       const refreshToken: string = await new Promise((resolve, reject) => {
         crypto.randomBytes(byteLength, (err, buffer) => {
@@ -40,30 +33,23 @@ export class AuthService {
       const expirationDate = addMonths(new Date(), 6);
 
       if (refreshToken) {
-        await this.prisma.refreshToken.upsert({
-          where: { user_id: userId },
-          create: {
-            user_id: userId,
-            value: refreshToken,
-            expiration_date: expirationDate,
-          },
-          update: {
-            value: refreshToken,
-            expiration_date: expirationDate,
-          },
-        });
+        await this.authRepository.upsertRefreshToken(
+          userId,
+          refreshToken,
+          expirationDate,
+        );
 
         return refreshToken;
       }
     } catch (error) {
-      console.log('unable to generate refresh token', error);
+      console.log(`unable to generate refresh token error: ${error}`);
     }
 
     return undefined;
   }
 
   async validateUser(username: string, password: string) {
-    const user = await this.usersService.findUser({ username });
+    const user = await this.usersRepository.findUser({ username });
     if (user && (await bcrypt.compare(password, user.password))) {
       return {
         ...user,
@@ -77,25 +63,22 @@ export class AuthService {
   async signup(signUpUserDto: { username: any; password: any }) {
     // -- TODO fix type
     const { username, password } = signUpUserDto;
-    console.log('-----username, password------', username, password);
     const hashedPassword = await bcrypt.hash(password, 10);
 
     let user;
     try {
-      user = await this.prisma.user.create({
-        data: {
-          username,
-          password: hashedPassword,
-        },
+      user = await this.usersRepository.createUser({
+        username,
+        password: hashedPassword,
       });
-    } catch (error: unknown) {
-      console.error(error);
+    } catch (error) {
+      console.log(error);
       throw new ConflictException('Username already exists');
     }
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken({ userId: user.id });
+    const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
       accessToken,
@@ -114,7 +97,6 @@ export class AuthService {
       loginUserDto.username,
       loginUserDto.password,
     );
-    console.log('---user----', user);
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -122,7 +104,7 @@ export class AuthService {
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken({ userId: user.id });
+    const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
       accessToken,
@@ -133,14 +115,7 @@ export class AuthService {
 
   async logout({ requestUser }: { requestUser: any }) {
     // -- TODO -- proper typing
-    console.log('---logout--requestUser---', requestUser);
-    await this.prisma.refreshToken.update({
-      where: { user_id: requestUser.sub },
-      data: {
-        value: '',
-        expiration_date: new Date(),
-      },
-    });
+    await this.authRepository.removeUserRefreshToken(requestUser.sub);
     return { message: 'Logged out successfully' };
   }
 
@@ -161,14 +136,13 @@ export class AuthService {
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { password: hashedNewPassword },
+    await this.usersRepository.updateUser(user.id, {
+      password: hashedNewPassword,
     });
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken({ userId: user.id });
+    const refreshToken = await this.generateRefreshToken(user.id);
 
     return {
       // message: 'Password reset successfully',
@@ -186,20 +160,12 @@ export class AuthService {
     requestUser: any;
   }) {
     // -- TODO -- proper typing
-    console.log('------requestUser-----', requestUser);
-    console.log('------refreshToken-----', refreshToken);
-    const refreshTokenDetails = await this.prisma.refreshToken.findUnique({
-      include: {
-        user: true,
-      },
-      where: {
-        user_id: requestUser.sub,
-        value: refreshToken,
-        expiration_date: { gt: new Date() },
-      },
-    });
+    const refreshTokenDetails =
+      await this.authRepository.findRefreshTokenDetails(
+        requestUser.sub,
+        refreshToken,
+      );
 
-    console.log('-------refreshTokenDetails----------', refreshTokenDetails);
     if (!refreshTokenDetails?.user.id) {
       throw new UnauthorizedException('Invalid refresh token');
     }

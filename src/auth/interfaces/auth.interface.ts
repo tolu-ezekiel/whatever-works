@@ -1,14 +1,15 @@
+import { User, RefreshToken } from '@prisma/client';
 import { Request } from 'express';
 
-interface User {
-  id: number;
+interface JwtUser {
+  sub: number;
   username: string;
-  password: string;
-  created_at: Date;
-  updated_at: Date;
-  deleted_at?: Date;
 }
 
 export interface AuthenticatedRequest extends Request {
+  user: JwtUser;
+}
+
+export interface RefreshTokenWithUser extends RefreshToken {
   user: User;
 }

@@ -27,7 +27,6 @@ export class AuthController {
     @Body() signUpUserDto: SignUpUserDto,
   ): Promise<Record<string, any>> {
     // TODO fix types
-    console.log('--11---signUpUserDto------', signUpUserDto);
     const { username, password } = signUpUserDto;
     return this.authService.signup({ username, password });
   }
@@ -36,7 +35,6 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginUserDto: loginUserDto) {
     // TODO fix types
-    console.log('--11---login------', loginUserDto);
     const { username, password } = loginUserDto;
     return this.authService.login({ username, password });
   }
