@@ -1,59 +1,52 @@
 import {
   Controller,
   Get,
-  Patch,
   Put,
   Body,
   Param,
+  Query,
   UseGuards,
+  Request,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User as UserModel } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
-
-// import { UpdateUserDto } from './dto/update-user.dto';
-// import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
-// import { Request } from 'express';
-// import { GetUser } from '../common/decorators/get-user.decorator';
+import { AuthenticatedRequest } from './interfaces/user.interface';
+import { GetUserDto, UpdateUserDto } from './dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  // get users
-  // get users/:id
-  // get users/?username={username}
-  // patch users/:id {username = new username}
+  @UseGuards(AuthGuard)
+  @Get()
+  async findUser(
+    @Query('username') getUserDto: GetUserDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<UserModel | null> {
+    return this.usersService.findUser({
+      username: getUserDto.username,
+      user: req.user,
+    });
+  }
 
   @UseGuards(AuthGuard)
   @Get('/:id')
-  async findById(@Param('id') id: number): Promise<UserModel> {
-    return this.usersService.findById(Number(id));
-  }
-
-  @UseGuards(AuthGuard)
-  @Get('username/:username')
-  async findByUsername(
-    @Param('username') username: string,
-  ): Promise<UserModel | null> {
-    return this.usersService.findByUsername(username);
-  }
-
-  @UseGuards(AuthGuard)
-  @Patch('/:id')
-  // @UseGuards(JwtAuthGuard)
-  async patchProfile(@Param('id') id: number, @Body() updateUserDto: any) {
-    // -- TODO -- fix type
-    return this.usersService.updateUser(Number(id), updateUserDto);
+  async findById(@Param('id', ParseIntPipe) id: number): Promise<UserModel> {
+    return this.usersService.findById({ id });
   }
 
   @UseGuards(AuthGuard)
   @Put('/:id')
   async updateProfile(
-    @Param('id') id: number,
-    @Body() updateUserDto: any,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
   ): Promise<UserModel> {
     // -- TODO -- fix type
-    return this.usersService.updateUser(Number(id), updateUserDto);
+    return this.usersService.updateUser({
+      id,
+      username: updateUserDto.username,
+    });
   }
 }

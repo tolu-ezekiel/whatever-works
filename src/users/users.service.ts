@@ -11,24 +11,29 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async updateUser(id: number, updateUserDto: any) {
-    // -- TODO fix type
-    console.log('----------update-------', id, updateUserDto);
-    return await this.prisma.user.update({
-      where: { id },
-      data: updateUserDto,
+  async findUser({ username, user }: { username: string; user?: any }) {
+    console.log('----------findUser-------', username);
+    return await this.prisma.user.findUnique({
+      where: {
+        ...(user?.sub ? { id: user?.sub } : undefined),
+        username,
+      },
     });
   }
 
-  async findById(id: number) {
+  async findById({ id }: { id: number }) {
     console.log('----------findById-------', id);
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  async findByUsername(username: string) {
-    console.log('----------findByUsername-------', username);
-    return await this.prisma.user.findUnique({ where: { username } });
+  async updateUser({ id, username }: { id: number; username: string }) {
+    // -- TODO fix type
+    console.log('----------update-------', id, username);
+    return await this.prisma.user.update({
+      where: { id },
+      data: { username },
+    });
   }
 }

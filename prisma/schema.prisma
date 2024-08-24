@@ -14,15 +14,16 @@ model User {
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
   deleted_at  DateTime?
-  refre_token RefreToken?
+  refre_token RefreshToken?
 }
 
-model RefreToken {
-  id          Int       @id @default(autoincrement())
-  value       String
-  user        User      @relation(fields: [user_id], references: [id])
-  user_id      Int       @unique
-  created_at  DateTime  @default(now())
-  updated_at  DateTime  @updatedAt
-  deleted_at  DateTime?
+model RefreshToken {
+  id              Int       @id @default(autoincrement())
+  value           String
+  user            User      @relation(fields: [user_id], references: [id])
+  user_id         Int       @unique
+  expiration_date DateTime
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
 }

@@ -1,39 +1,83 @@
 import {
   Body,
   Controller,
-  // Get,
   HttpCode,
   HttpStatus,
   Post,
-  // Request,
-  // UseGuards,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { AuthGuard } from '../auth/auth.guard';
+import {
+  SignUpUserDto,
+  loginUserDto,
+  ResetPasswordDto,
+  NewAccessTokenDto,
+} from './dto';
+import { AuthenticatedRequest } from './interfaces/auth.interface';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @HttpCode(HttpStatus.OK)
-  @Post('login')
-  async login(@Body() loginUserDto: Record<string, any>) {
-    // TODO fix types
-    return this.authService.login(loginUserDto);
-  }
-
   @HttpCode(HttpStatus.CREATED)
   @Post('signup')
-  async signup(@Body() signUpUserDto: any): Promise<Record<string, any>> {
+  async signup(
+    @Body() signUpUserDto: SignUpUserDto,
+  ): Promise<Record<string, any>> {
     // TODO fix types
+    console.log('--11---signUpUserDto------', signUpUserDto);
     const { username, password } = signUpUserDto;
     return this.authService.signup({ username, password });
   }
 
-  // logout
+  @HttpCode(HttpStatus.OK)
+  @Post('login')
+  async login(@Body() loginUserDto: loginUserDto) {
+    // TODO fix types
+    console.log('--11---login------', loginUserDto);
+    const { username, password } = loginUserDto;
+    return this.authService.login({ username, password });
+  }
 
-  // newAccessToken
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('logout')
+  async logout(
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Record<string, any>> {
+    // TODO fix types
+    return this.authService.logout({ requestUser: req.user });
+  }
 
-  // changePassword
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  @Post('reset-password')
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Record<string, any>> {
+    // TODO fix types
+    const { oldPassword, newPassword } = resetPasswordDto;
+    return this.authService.resetPassword({
+      oldPassword,
+      newPassword,
+      requestUser: req.user,
+    });
+  }
 
-  // forgotPassword -- TODO --
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('new-access-token')
+  async newAccessToken(
+    @Body() newAccessTokenDto: NewAccessTokenDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<Record<string, any>> {
+    // TODO fix types
+    return this.authService.newAccessToken({
+      refreshToken: newAccessTokenDto.refreshToken,
+      requestUser: req.user,
+    });
+  }
 }
