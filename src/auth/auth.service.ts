@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
-import * as crypto from 'crypto';
 import { addMonths } from 'date-fns';
 import { User } from '@prisma/client';
 import { AuthRepository } from './auth.repository';
@@ -17,7 +16,9 @@ import {
   UserWithOptionalPassword,
   SignUpUserResponse,
   JwtUser,
+  ResetPasswordResponse,
 } from './interfaces/auth.interface';
+import { generateRefreshToken } from '../common/util/refresh-token.util';
 
 @Injectable()
 export class AuthService {
@@ -26,39 +27,6 @@ export class AuthService {
     private authRepository: AuthRepository,
     private usersRepository: UsersRepository,
   ) {}
-
-  async generateRefreshToken(
-    userId: number,
-    byteLength = 70,
-  ): Promise<string | undefined> {
-    try {
-      const refreshToken: string = await new Promise((resolve, reject) => {
-        crypto.randomBytes(byteLength, (err, buffer) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(buffer.toString('hex'));
-          }
-        });
-      });
-
-      const expirationDate = addMonths(new Date(), 6);
-
-      if (refreshToken) {
-        await this.authRepository.upsertRefreshToken(
-          userId,
-          refreshToken,
-          expirationDate,
-        );
-
-        return refreshToken;
-      }
-    } catch (error) {
-      console.log(`unable to generate refresh token error: ${error}`);
-    }
-
-    return undefined;
-  }
 
   async validateUser(
     username: string,
@@ -92,7 +60,16 @@ export class AuthService {
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken(user.id);
+    const refreshToken = await generateRefreshToken();
+
+    if (refreshToken) {
+      const expirationDate = addMonths(new Date(), 6);
+      await this.authRepository.upsertRefreshToken(
+        user.id,
+        refreshToken,
+        expirationDate,
+      );
+    }
 
     return {
       accessToken,
@@ -116,7 +93,7 @@ export class AuthService {
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken(user.id);
+    const refreshToken = await generateRefreshToken();
 
     return {
       accessToken,
@@ -133,7 +110,7 @@ export class AuthService {
   async resetPassword(
     resetPasswordDto: ResetPasswordDto,
     requestUser: JwtUser,
-  ): Promise<SignUpUserResponse> {
+  ): Promise<ResetPasswordResponse> {
     const { oldPassword, newPassword } = resetPasswordDto;
     const user = await this.validateUser(requestUser.username, oldPassword);
     if (!user) {
@@ -141,19 +118,25 @@ export class AuthService {
     }
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
     await this.usersRepository.updateUser(user.id, {
       password: hashedNewPassword,
     });
 
     const payload = { username: user.username, sub: user.id };
     const accessToken = await this.jwtService.signAsync(payload);
-    const refreshToken = await this.generateRefreshToken(user.id);
+    const refreshToken = await generateRefreshToken();
+    if (refreshToken) {
+      const expirationDate = addMonths(new Date(), 6);
+      await this.authRepository.upsertRefreshToken(
+        user.id,
+        refreshToken,
+        expirationDate,
+      );
+    }
 
     return {
       accessToken,
       refreshToken,
-      user,
     };
   }
 

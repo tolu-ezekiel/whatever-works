@@ -23,3 +23,8 @@ export interface SignUpUserResponse {
   refreshToken?: string;
   user: UserWithOptionalPassword;
 }
+
+export interface ResetPasswordResponse {
+  accessToken: string;
+  refreshToken?: string;
+}

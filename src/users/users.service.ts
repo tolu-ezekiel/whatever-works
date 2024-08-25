@@ -1,11 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { addMonths } from 'date-fns';
 import { UsersRepository } from './users.repository';
+import { AuthRepository } from '../auth/auth.repository';
 import { User } from '@prisma/client';
-import { JwtUser, UserWithOptionalPassword } from './interfaces/user.interface';
+import {
+  JwtUser,
+  UserWithOptionalPassword,
+  UpdateUsernameResponse,
+} from './interfaces/user.interface';
+import { generateRefreshToken } from '../common/util/refresh-token.util';
 
 @Injectable()
 export class UsersService {
-  constructor(private usersRepository: UsersRepository) {}
+  constructor(
+    private usersRepository: UsersRepository,
+    private jwtService: JwtService,
+    private authRepository: AuthRepository,
+  ) {}
 
   async findById(id: number): Promise<UserWithOptionalPassword> {
     const user = await this.usersRepository.findById(id);
@@ -37,7 +49,31 @@ export class UsersService {
     };
   }
 
-  async updateUser(id: number, updateUserDto: Partial<User>): Promise<User> {
-    return this.usersRepository.updateUser(id, updateUserDto);
+  async updateUsername(
+    id: number,
+    username: string,
+  ): Promise<UpdateUsernameResponse> {
+    const user = await this.usersRepository.updateUser(id, { username });
+
+    const payload = { username: user.username, sub: user.id };
+    const accessToken = await this.jwtService.signAsync(payload);
+    const refreshToken = await generateRefreshToken();
+    if (refreshToken) {
+      const expirationDate = addMonths(new Date(), 6);
+      await this.authRepository.upsertRefreshToken(
+        user.id,
+        refreshToken,
+        expirationDate,
+      );
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        ...user,
+        password: undefined,
+      },
+    };
   }
 }

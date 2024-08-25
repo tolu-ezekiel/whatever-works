@@ -18,3 +18,9 @@ export interface CreateUser {
 export interface UserWithOptionalPassword extends Omit<User, 'password'> {
   password?: string;
 }
+
+export interface UpdateUsernameResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user: UserWithOptionalPassword;
+}
