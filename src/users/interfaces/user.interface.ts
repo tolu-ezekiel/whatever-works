@@ -1,3 +1,4 @@
+import { User } from '@prisma/client';
 import { Request } from 'express';
 
 export interface JwtUser {
@@ -12,4 +13,8 @@ export interface AuthenticatedRequest extends Request {
 export interface CreateUser {
   username: string;
   password: string;
+}
+
+export interface UserWithOptionalPassword extends Omit<User, 'password'> {
+  password?: string;
 }

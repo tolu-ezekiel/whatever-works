@@ -23,7 +23,7 @@ async function bootstrap() {
     .addTag('user management')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-doc', app, document);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(process.env.PORT || 3000);
   console.log(`\u{1F389} Application is running on: ${await app.getUrl()}`);

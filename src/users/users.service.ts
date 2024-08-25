@@ -1,29 +1,40 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { User } from '@prisma/client';
-import { JwtUser } from './interfaces/user.interface';
+import { JwtUser, UserWithOptionalPassword } from './interfaces/user.interface';
 
 @Injectable()
 export class UsersService {
   constructor(private usersRepository: UsersRepository) {}
 
-  async findUser(
-    getUserQueryDto: Partial<User>,
-    user?: JwtUser,
-  ): Promise<User | null> {
-    const criteria = {
-      ...(user?.sub ? { id: user.sub } : undefined),
-      ...getUserQueryDto,
-    };
-    return this.usersRepository.findUser(criteria);
-  }
-
-  async findById(id: number): Promise<User> {
+  async findById(id: number): Promise<UserWithOptionalPassword> {
     const user = await this.usersRepository.findById(id);
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    return {
+      ...user,
+      password: undefined,
+    };
+  }
+
+  async findUser(
+    getUserQueryDto: Partial<User>,
+    requestUser?: JwtUser,
+  ): Promise<UserWithOptionalPassword | null> {
+    const criteria = {
+      ...(requestUser?.sub ? { id: requestUser.sub } : undefined),
+      ...getUserQueryDto,
+    };
+
+    const user = await this.usersRepository.findUser(criteria);
+    if (!user) {
+      return null;
+    }
+    return {
+      ...user,
+      password: undefined,
+    };
   }
 
   async updateUser(id: number, updateUserDto: Partial<User>): Promise<User> {

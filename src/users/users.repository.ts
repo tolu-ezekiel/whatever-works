@@ -12,7 +12,9 @@ export class UsersRepository {
   }
 
   async findUser(criteria: Partial<User>): Promise<User | null> {
-    return this.prisma.user.findFirst({ where: criteria });
+    return this.prisma.user.findFirst({
+      where: criteria,
+    });
   }
 
   async findById(id: number): Promise<User | null> {

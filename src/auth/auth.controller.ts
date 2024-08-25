@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../auth/auth.guard';
-import { loginUserDto } from './dto/login-user.dto';
+import { LoginUserDto } from './dto/login-user.dto';
 import { SignUpUserDto } from './dto/signup-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { NewAccessTokenDto } from './dto/new-access-token.dto';
@@ -24,17 +24,15 @@ export class AuthController {
   async signup(
     @Body() signUpUserDto: SignUpUserDto,
   ): Promise<Record<string, any>> {
-    // TODO fix types
-    const { username, password } = signUpUserDto;
-    return this.authService.signup({ username, password });
+    return this.authService.signup(signUpUserDto);
   }
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
-  async login(@Body() loginUserDto: loginUserDto) {
-    // TODO fix types
-    const { username, password } = loginUserDto;
-    return this.authService.login({ username, password });
+  async login(
+    @Body() loginUserDto: LoginUserDto,
+  ): Promise<Record<string, any>> {
+    return this.authService.login(loginUserDto);
   }
 
   @UseGuards(AuthGuard)
@@ -43,8 +41,7 @@ export class AuthController {
   async logout(
     @Request() req: AuthenticatedRequest,
   ): Promise<Record<string, any>> {
-    // TODO fix types
-    return this.authService.logout({ requestUser: req.user });
+    return this.authService.logout(req.user);
   }
 
   @UseGuards(AuthGuard)
@@ -54,13 +51,7 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<Record<string, any>> {
-    // TODO fix types
-    const { oldPassword, newPassword } = resetPasswordDto;
-    return this.authService.resetPassword({
-      oldPassword,
-      newPassword,
-      requestUser: req.user,
-    });
+    return this.authService.resetPassword(resetPasswordDto, req.user);
   }
 
   @UseGuards(AuthGuard)
@@ -70,10 +61,6 @@ export class AuthController {
     @Body() newAccessTokenDto: NewAccessTokenDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<Record<string, any>> {
-    // TODO fix types
-    return this.authService.newAccessToken({
-      refreshToken: newAccessTokenDto.refreshToken,
-      requestUser: req.user,
-    });
+    return this.authService.newAccessToken(newAccessTokenDto, req.user);
   }
 }

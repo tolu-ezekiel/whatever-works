@@ -10,9 +10,12 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { User as UserModel } from '@prisma/client';
+import { User } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
-import { AuthenticatedRequest } from './interfaces/user.interface';
+import {
+  AuthenticatedRequest,
+  UserWithOptionalPassword,
+} from './interfaces/user.interface';
 import { GetUserQueryDto } from './dto/get-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -21,18 +24,20 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @UseGuards(AuthGuard)
-  @Get()
-  async findUser(
-    @Query('username') getUserQueryDto: GetUserQueryDto,
-    @Request() req: AuthenticatedRequest,
-  ): Promise<UserModel | null> {
-    return this.usersService.findUser(getUserQueryDto, req.user);
+  @Get('/:id')
+  async findById(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<UserWithOptionalPassword> {
+    return this.usersService.findById(id);
   }
 
   @UseGuards(AuthGuard)
-  @Get('/:id')
-  async findById(@Param('id', ParseIntPipe) id: number): Promise<UserModel> {
-    return this.usersService.findById(id);
+  @Get()
+  async findUser(
+    @Query() getUserQueryDto: GetUserQueryDto,
+    @Request() req: AuthenticatedRequest,
+  ): Promise<UserWithOptionalPassword | null> {
+    return this.usersService.findUser(getUserQueryDto, req.user);
   }
 
   @UseGuards(AuthGuard)
@@ -40,8 +45,7 @@ export class UsersController {
   async updateProfile(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateUserDto: UpdateUserDto,
-  ): Promise<UserModel> {
-    // -- TODO -- fix type
+  ): Promise<User> {
     return this.usersService.updateUser(id, updateUserDto);
   }
 }

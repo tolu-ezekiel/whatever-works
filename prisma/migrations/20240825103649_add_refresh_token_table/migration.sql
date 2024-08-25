@@ -1,20 +1,9 @@
-/*
-  Warnings:
-
-  - You are about to drop the `RefreToken` table. If the table is not empty, all the data it contains will be lost.
-
-*/
--- DropForeignKey
-ALTER TABLE "RefreToken" DROP CONSTRAINT "RefreToken_user_id_fkey";
-
--- DropTable
-DROP TABLE "RefreToken";
-
 -- CreateTable
 CREATE TABLE "RefreshToken" (
     "id" SERIAL NOT NULL,
     "value" TEXT NOT NULL,
     "user_id" INTEGER NOT NULL,
+    "expiration_date" TIMESTAMP(3) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
