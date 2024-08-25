@@ -9,12 +9,10 @@ import {
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '../auth/auth.guard';
-import {
-  SignUpUserDto,
-  loginUserDto,
-  ResetPasswordDto,
-  NewAccessTokenDto,
-} from './dto';
+import { loginUserDto } from './dto/login-user.dto';
+import { SignUpUserDto } from './dto/signup-user.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { NewAccessTokenDto } from './dto/new-access-token.dto';
 import { AuthenticatedRequest } from './interfaces/auth.interface';
 
 @Controller('auth')

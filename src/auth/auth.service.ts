@@ -18,7 +18,7 @@ export class AuthService {
     private usersRepository: UsersRepository,
   ) {}
 
-  async generateRefreshToken(userId: number, byteLength = 100) {
+  async generateRefreshToken(userId: number, byteLength = 70) {
     try {
       const refreshToken: string = await new Promise((resolve, reject) => {
         crypto.randomBytes(byteLength, (err, buffer) => {

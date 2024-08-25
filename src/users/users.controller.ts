@@ -13,7 +13,8 @@ import { UsersService } from './users.service';
 import { User as UserModel } from '@prisma/client';
 import { AuthGuard } from '../auth/auth.guard';
 import { AuthenticatedRequest } from './interfaces/user.interface';
-import { GetUserQueryDto, UpdateUserDto } from './dto';
+import { GetUserQueryDto } from './dto/get-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {

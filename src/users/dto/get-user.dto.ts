@@ -5,9 +5,3 @@ export class GetUserQueryDto {
   @IsNotEmpty()
   username: string;
 }
-
-export class UpdateUserDto {
-  @IsString()
-  @IsNotEmpty()
-  username: string;
-}
