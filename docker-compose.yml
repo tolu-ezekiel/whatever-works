@@ -28,9 +28,6 @@ services:
     ports:
       - ${PORT}:${PORT}
       - 9229:9229 # for debugging
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       - postgres
 

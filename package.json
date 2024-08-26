@@ -20,7 +20,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "migrate:dev": "npx prisma migrate dev --name ${npm_config_name}",
     "migrate:prod": "npx prisma migrate deploy",
-    "docker:build:up": "docker build . && docker compose up"
+    "docker:build:up": "docker compose build && docker compose up"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",

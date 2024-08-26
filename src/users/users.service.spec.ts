@@ -131,7 +131,7 @@ describe('UsersService', () => {
 
   describe('updateUsername', () => {
     it('should call UsersRepository.updateUser with correct username and return user and token', async () => {
-      const updateUserDto = { username: 'updatedusername' };
+      const updateUsernameDto = { username: 'updatedusername' };
       const accessToken = 'access-token';
       const refreshToken = 'refresh-token';
       const updatedUser = {
@@ -154,16 +154,16 @@ describe('UsersService', () => {
 
       const result = await usersService.updateUsername(
         user.id,
-        updateUserDto.username,
+        updateUsernameDto.username,
       );
 
       expect(jwtService.signAsync).toHaveBeenCalledWith({
-        username: updateUserDto.username,
+        username: updateUsernameDto.username,
         sub: user.id,
       });
       expect(usersRepository.updateUser).toHaveBeenCalledWith(
         user.id,
-        updateUserDto,
+        updateUsernameDto,
       );
       expect(result).toEqual(updateUsernameRes);
     });
